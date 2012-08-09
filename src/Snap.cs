@@ -15,53 +15,9 @@ namespace xcap
     {
         // -- TODO -- //
         // Add more in depths comments explaining what a lot of stuff does.
-        // Add a way to change the key-bind.
         // Add an option to run xcap on start. 
         //  -> Probably means I'll have to pack this in an installer and make sure its run from %ProgramFiles%\.xcap or something.
 
-
-
-        /// <summary>
-        /// The location that xcap will upload it's images to.
-        /// </summary>
-        /// <remarks>
-        /// Not sure if I should optionally add FTP or stick
-        /// with a PHP uploading script.
-        /// </remarks>
-        public static Uri UploadUrl
-        {
-            get
-            {
-                return new Uri("http://example.com/upload.php");
-            }
-        }
-
-        /// <summary>
-        /// The current xcap build version.
-        /// </summary>
-        public static String Version
-        {
-            get
-            {
-                return "1.0.0";
-            }
-        }
-
-        /// <summary>
-        /// Returns a string of the path to the .xcap folder in Application Data.
-        /// </summary>
-        public static String Folder
-        {
-            get
-            {
-                String PATH = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".xcap");
-                if (!Directory.Exists(PATH))
-                {
-                    Directory.CreateDirectory(PATH);
-                }
-                return PATH;
-            }
-        }
 
         /// <summary>
         /// DummyForm used for handling keyboard hooks and grabbing form icons.
@@ -69,12 +25,15 @@ namespace xcap
         /// <remarks>
         /// This form is double buffered to fix glitches in frozen snap mode, where the
         /// display boxes would freak out and have the horrible update line run down the form.
+        /// Because who needs vsync anyway?
         /// </remarks>
-        private static DummyForm form;
+        public static DummyForm form { get; private set; }
+        public static DummyForm1 form1 { get; set; }
+
         /// <summary>
         /// The system-tray icon which is displayed.
         /// </summary>
-        private static NotifyIcon icon;
+        public static NotifyIcon icon { get; private set; }
 
         #region SELECTION_BOX
         private static bool down = false;
@@ -97,90 +56,40 @@ namespace xcap
         }
         #endregion
 
-        #region VARIABLES
-        private enum UploadResult
-        {
-            UPLOAD_FAILED  = -1,
-            UPLOAD_SUCCESS =  0,
-            UPLOAD_MISC    =  1
-        }
-
-        /// <summary>
-        /// Does the user like to use "Frozen" snap?
-        /// This is where a still image is taken of the display when the snap is called, and they choose from that.
-        /// </summary>
-        private static bool Frozen
-        {
-            get
-            {
-                return Boolean.Parse(Registry.CurrentUser.CreateSubKey(@"Software\xcap")
-                    .GetValue("FREEZE", false).ToString());
-            }
-            set
-            {
-                Registry.CurrentUser.CreateSubKey(@"Software\xcap")
-                    .SetValue("FREEZE", value, RegistryValueKind.String);
-            }
-        }
-
-        /// <summary>
-        /// Would the user prefer a "direct" link to the snap (http://example.com/i/12345.png), or
-        /// an indirect link (http://example.com/12345.png) which will display the image in a page.
-        /// </summary>
-        private static bool Direct
-        {
-            get
-            {
-                return Boolean.Parse(Registry.CurrentUser.CreateSubKey(@"Software\xcap")
-                    .GetValue("DIRECT", false).ToString());
-            }
-            set
-            {
-                Registry.CurrentUser.CreateSubKey(@"Software\xcap")
-                    .SetValue("DIRECT", value, RegistryValueKind.String);
-            }
-        }
-
-        #endregion
-
-        private static GlobalHotkey ghk;
-
         public Snap()
         {
+            /// Setup default keybinds.
+            RegistryKey key_snap = Registry.CurrentUser.CreateSubKey(@"Software\xcap");
+            if (key_snap.GetValue("SNAP") == null)
+                key_snap.SetValue("SNAP", "+--~");
+            if (key_snap.GetValue("FULL") == null)
+                key_snap.SetValue("FULL", "+-+~");
+            if (key_snap.GetValue("URI") == null)
+                key_snap.SetValue("URI", Settings.UploadUrl.ToString());
+            if (key_snap.GetValue("OWN_SERV") == null)
+                key_snap.SetValue("OWN_SERV", Settings.UseOwnServer);
+
             form = new DummyForm();
-            ghk = new GlobalHotkey(Constants.CTRL, Keys.Oemtilde, form);
-            ghk.Register();
+            form1 = new DummyForm1();
+
+            Settings.RefreshKeyBinds();
 
             form.FormClosing += new FormClosingEventHandler(form_FormClosing);
+            form1.FormClosing += new FormClosingEventHandler(form_FormClosing);
+
             icon = new NotifyIcon();
             icon.Text = "xcap";
             icon.Icon = form.Icon;
             icon.Visible = true;
             icon.ContextMenu = new ContextMenu();
 
-            MenuItem frozen = new MenuItem("Frozen Snap (BETA)");
-            frozen.Click += (sender, e) =>
+            MenuItem options = new MenuItem("Options");
+            options.Click += (sender, e) =>
             {
-                Frozen = !Frozen;
-                frozen.Checked = Frozen;
+                new Options().Show();
             };
-            frozen.Checked = Frozen;
-            icon.ContextMenu.MenuItems.Add(frozen);
-
-            MenuItem direct = new MenuItem("Direct Link");
-            direct.Click += (sender, e) =>
-            {
-                Direct = !Direct;
-                direct.Checked = Direct;
-            };
-            direct.Checked = Direct;
-            icon.ContextMenu.MenuItems.Add(direct);
-
-            icon.ContextMenu.MenuItems.Add("About", (sender, e) =>
-            {
-                MessageBox.Show("Ctrl-Tilde or double click the xcap icon to take a snap!\nCoded by PigBacon.", "xcap -- Version " + Version);
-            });
-
+            icon.ContextMenu.MenuItems.Add(options);
+            
             icon.ContextMenu.MenuItems.Add("Exit", (sender, e) =>
             {
                 Application.Exit();
@@ -193,7 +102,17 @@ namespace xcap
             Application.Run();
 
             form.Dispose();
-            ghk.Unregister();
+            form1.Dispose();
+            Settings.ghk_Snap.Unregister();
+            Settings.ghk_Full.Unregister();
+        }
+
+        public static void LogError(Exception ex)
+        {
+            StreamWriter stream = new StreamWriter(Path.Combine(Settings.Folder, "error.log"), true);
+            stream.WriteLine(String.Format("---- {0} ----", DateTime.Now.ToLongTimeString()));
+            stream.WriteLine(ex);
+            stream.Dispose();
         }
 
         public static void form_FormClosing(object sender, FormClosingEventArgs e)
@@ -256,10 +175,10 @@ namespace xcap
             SelectFrm.WindowState = FormWindowState.Maximized;
             SelectFrm.FormBorderStyle = FormBorderStyle.None;
             SelectFrm.ShowInTaskbar = false;
-            SelectFrm.Opacity = Frozen ? 1.0 : 0.5;
-            SelectFrm.BackColor = Frozen ? Color.White : Color.White;
+            SelectFrm.Opacity = Settings.Frozen ? 1.0 : 0.5;
+            SelectFrm.BackColor = Color.White;
             Bitmap bm = null;
-            if (Frozen)
+            if (Settings.Frozen)
             {
                 bm = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height, PixelFormat.Format32bppArgb);
                 Graphics snapShot = Graphics.FromImage(bm);
@@ -284,7 +203,7 @@ namespace xcap
                 e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(150, Color.Gray)), selectedRect);
                 e.Graphics.DrawRectangle(new Pen(Color.FromArgb(0x00, 0x00, 0x00), 1), selectedRect);
 
-                if (Frozen)
+                if (Settings.Frozen)
                 {
                     e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(150, Color.Gray)),
                         new Rectangle(0, 0, Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height)
@@ -356,11 +275,47 @@ namespace xcap
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(string.Format("Error: {0}\n{1}", ex.Message, ex.StackTrace));
+                    LogError(ex);
+                    MessageBox.Show(string.Format("An error occured!\n"
+                        +"Please send the contents of your error.log to the developer."));
                 }
             }
             if (!SelectFrm.IsDisposed)
                 SelectFrm.Dispose();
+            CleanUp();
+        }
+
+        /// <summary>
+        /// Takes a picture of the entire screen, allowing for easier fullscreen snapping.
+        /// </summary>
+        public static void TakeFull()
+        {
+            try
+            {
+                Bitmap bitmap = new Bitmap(Screen.PrimaryScreen.Bounds.Width,
+                    Screen.PrimaryScreen.Bounds.Height,
+                    PixelFormat.Format32bppArgb);
+
+                Graphics snapShot = Graphics.FromImage(bitmap);
+
+                snapShot.CopyFromScreen(0, 0,
+                    Screen.PrimaryScreen.Bounds.X,
+                    Screen.PrimaryScreen.Bounds.Y,
+                    Screen.PrimaryScreen.Bounds.Size,
+                    CopyPixelOperation.SourceCopy);
+                bitmap = bitmap.Clone(new Rectangle(0, 0, Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height), 
+                                      PixelFormat.Format32bppArgb);
+                Upload(bitmap);
+                bitmap.Dispose();
+                snapShot.Dispose();
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                MessageBox.Show(string.Format("An error occured!\n"
+                    + "Please send the contents of your error.log to the developer.\n"
+                    + "Error: {0}\n{1}", ex.Message, ex.StackTrace));
+            }
             CleanUp();
         }
 
@@ -378,92 +333,144 @@ namespace xcap
             mousePos = new Point(-1, -1);
         }
 
-        /// <summary>
-        /// Saves the bitmap image to disk (simply because I don't know how to send a raw bitmap resource), then sends it to an upload script.
-        /// </summary>
-        /// <param name="bitmap">The bitmap to save & upload.</param>
-        public static void Upload(Bitmap bitmap)
+        public static byte[] ImageToByte(Image img)
         {
-            String TMP_FILE_LOC = Path.Combine(Folder, RandomCharacters() + ".png");
-            bitmap.Save(TMP_FILE_LOC, ImageFormat.Png);
-            WebClient Client = new WebClient();
-            Client.Headers.Add("Content-Type", "binary/octet-stream");
-            Client.QueryString.Add("direct", Direct ? "yes" : "no");
-            byte[] result = Client.UploadFile(UploadUrl, "POST", TMP_FILE_LOC);
-            string s = System.Text.Encoding.UTF8.GetString(result, 0, result.Length);
-            Client.Dispose();
-            File.Delete(TMP_FILE_LOC);
+            ImageConverter converter = new ImageConverter();
+            return (byte[])converter.ConvertTo(img, typeof(byte[]));
+        }
 
-            UploadResult ur = UploadResult.UPLOAD_MISC;
+        public static void SetPercentIcon(int percent)
+        {
+            Brush brush = new SolidBrush(Color.White);
+            Bitmap bitmap = new Bitmap(16, 16);
+            Graphics graphics = Graphics.FromImage(bitmap);
+            Font font = new Font(FontFamily.GenericMonospace, 8);
+            graphics.FillEllipse(new SolidBrush(Color.Blue), new Rectangle(0, 0, 15, 15));
+            graphics.DrawString((percent != 100 ? percent.ToString() : ":)"), font, brush, 0, 0);
+            IntPtr hIcon = bitmap.GetHicon();
+            Icon newIcon = Icon.FromHandle(hIcon);
+            icon.Icon = newIcon;
+
+            bitmap.Dispose();
+            newIcon.Dispose();
+            graphics.Dispose();
+            font.Dispose();
+        }
+
+        public static void Upload(Image img)
+        {
+            Dictionary<String, String> post = new Dictionary<String, String>();
+            post.Add("direct", "yes");
+
+            HttpWebResponse resp = MultipartFormDataPost(Settings.UploadUrl, post, img);
+            icon.Icon = form.Icon;
+            Stream dataStream = resp.GetResponseStream();
+            StreamReader reader = new StreamReader(dataStream);
+            String s = reader.ReadToEnd();
+
+            reader.Close();
+            dataStream.Close();
+            resp.Close();
+
+            Settings.UploadResult ur = Settings.UploadResult.MISC;
             if (s.Substring(0, 1) == "+")
             {
-                ur = UploadResult.UPLOAD_SUCCESS;
+                ur = Settings.UploadResult.SUCCESS;
                 Clipboard.SetText(s.Substring(1));
             }
             else if (s.Substring(0, 1) == "-")
             {
-                ur = UploadResult.UPLOAD_FAILED;
+                ur = Settings.UploadResult.FAILED;
             }
             else
             {
-                ur = UploadResult.UPLOAD_MISC;
+                ur = Settings.UploadResult.MISC;
             }
 
             switch (ur)
             {
-                case UploadResult.UPLOAD_SUCCESS:
-                    icon.ShowBalloonTip(150, "Success! :)", "Successfully uploaded xcap and put link on clipboard.", ToolTipIcon.Info);
+                case Settings.UploadResult.SUCCESS:
+                    icon.ShowBalloonTip(150, "Success! :)", "Successfully uploaded xcap.", ToolTipIcon.Info);
                     break;
-                case UploadResult.UPLOAD_FAILED:
+                case Settings.UploadResult.FAILED:
                     icon.ShowBalloonTip(150, "Failure! :(", s.Substring(1), ToolTipIcon.Error);
                     break;
-                case UploadResult.UPLOAD_MISC:
+                case Settings.UploadResult.MISC:
                     MessageBox.Show(s, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     break;
             }
         }
 
-        /// <summary>
-        /// Creates a string which is a cluster of random alpha-numeric characters.
-        /// Used for saving the image to disk.
-        /// </summary>
-        /// <param name="Length">The length the return string should be.</param>
-        /// <returns>A string made of random alpha-numeric characters.</returns>
-        private static string RandomCharacters(Int32 Length = 30)
+        private static String NewDataBoundary()
         {
-            Random rand = new Random();
-            Char[] alpha =
+            Random rnd = new Random();
+            String formDataBoundary = "";
+            while (formDataBoundary.Length < 15)
             {
-                'a', 'b', 'c', 'd', 
-                'e', 'f', 'g', 'h', 
-                'i', 'j', 'k', 'l', 
-                'm', 'n', 'o', 'p', 
-                'q', 'r', 's', 't',
-                'u', 'v', 'w', 'x', 
-                'y', 'z'
-            };
-            Char[] numeric =
-            {
-                '0', '1', '2', '3',
-                '4', '5', '6', '7',
-                '8', '9'
-            };
-            string temp = "";
-            for (int i = 0; i < Length; i++)
-            {
-                int t = rand.Next(1, 5);
-                if (t == 1)
-                {
-                    int u = rand.Next(0, 2);
-                    char c = alpha[rand.Next(0, alpha.Length - 1)];
-                    temp += (u == 1 ? c.ToString().ToLower() : c.ToString().ToUpper());
-                }
-                else if (t == 2)
-                {
-                    temp += numeric[rand.Next(0, numeric.Length - 1)].ToString();
-                }
+                formDataBoundary = formDataBoundary + rnd.Next();
             }
-            return temp;
+            formDataBoundary = formDataBoundary.Substring(0, 15);
+            formDataBoundary = "-----------------------------" + formDataBoundary;
+            return formDataBoundary;
+        }
+
+        public static HttpWebResponse MultipartFormDataPost(Uri postUrl, Dictionary<String, String> postParameters, Image img)
+        {
+            String boundary = NewDataBoundary();
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(postUrl);
+
+            // Set up the request properties
+            request.Method = "POST";
+            request.ContentType = "multipart/form-data; boundary=" + boundary;
+            request.UserAgent = "XCAP Upload Agent";
+
+            #region WRITING STREAM
+            using (Stream formDataStream = request.GetRequestStream())
+            {
+                String header = String.Format("--{0}\r\nContent-Disposition: form-data; name=\"{1}\"; filename=\"{2}\";\r\nContent-Type: {3}\r\n\r\n",
+                    boundary,
+                    "image",
+                    "xcap-image.png",
+                    "image/png");
+
+                formDataStream.Write(Encoding.UTF8.GetBytes(header), 0, header.Length);
+                
+                /* This is just incase you want to plainly dump the image into the
+                 * server. Otherwise we use a memory stream and check percentages.
+                byte[] image = ImageToByte(img);
+                formDataStream.Write(image, 0, image.Length);
+                 */
+
+                byte[] image = ImageToByte(img);
+                MemoryStream ms = new MemoryStream(image);
+                int count = 0, total = 0, chunkSize = 512;
+                do
+                {
+                    byte[] buf = new byte[chunkSize];
+                    count = ms.Read(buf, 0, chunkSize);
+                    total += count;
+                    formDataStream.Write(buf, 0, count);
+                    int percent = ((total * 100) / image.Length);
+                    SetPercentIcon(percent);
+                } while (ms.CanRead && count > 0);
+
+                foreach (var param in postParameters)
+                {
+                    String postData = String.Format("--{0}\r\nContent-Disposition: form-data; name=\"{1}\"\r\n\r\n{2}\r\n",
+                        boundary,
+                        param.Key,
+                        param.Value);
+                    formDataStream.Write(Encoding.UTF8.GetBytes(postData), 0, postData.Length);
+                }
+                // Add the end of the request
+                byte[] footer = Encoding.UTF8.GetBytes("\r\n--" + boundary + "--\r\n");
+                formDataStream.Write(footer, 0, footer.Length);
+                formDataStream.Close();
+            }
+            #endregion
+
+            return request.GetResponse() as HttpWebResponse;
         }
     }
 }

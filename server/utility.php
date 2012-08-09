@@ -1,5 +1,23 @@
 <?php
-    define ('XCAP_URL', 'http://xcap.in');
+
+    include ('constants.php');
+
+    function get_url($extra = null) {
+        $pageURL = 'http';
+        if ($_SERVER["HTTPS"] == "on") {
+            $pageURL .= "s";
+        }
+        $pageURL .= "://";
+        if ($_SERVER["SERVER_PORT"] != "80") {
+            $pageURL .= $_SERVER["SERVER_NAME"].":".$_SERVER["SERVER_PORT"];
+        } else {
+            $pageURL .= $_SERVER["SERVER_NAME"];
+        }
+        if (!is_null($extra)) {
+            $pageURL .= "/$extra";
+        }
+        return $pageURL;
+    }
 
     function template_header($page, $caption = null) {
         if (is_null($caption)) {
@@ -18,7 +36,7 @@
         echo '<div id="header">'.PHP_EOL;
         echo '<div class="xcap">'.PHP_EOL;
         echo '<div id="header-text">'.PHP_EOL;
-        echo '<h1 class="shadow" style="font-size: 250%; font-weight: bold;"><a href="'.XCAP_URL.'">XCAP</a></h1>'.PHP_EOL;
+        echo '<h1 class="shadow" style="font-size: 250%; font-weight: bold;"><a href="'.get_url().'">XCAP</a></h1>'.PHP_EOL;
         echo '<div class="shadow">'.$caption.'</div>'.PHP_EOL;
         echo '</div>'.PHP_EOL;
         echo '</div>'.PHP_EOL;

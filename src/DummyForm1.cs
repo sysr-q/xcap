@@ -9,9 +9,9 @@ using System.Windows.Forms;
 
 namespace xcap
 {
-    public partial class DummyForm : Form
+    public partial class DummyForm1 : Form
     {
-        public DummyForm()
+        public DummyForm1()
         {
             InitializeComponent();
         }
@@ -24,7 +24,7 @@ namespace xcap
         protected override void WndProc(ref Message m)
         {
             if (m.Msg == Constants.WM_HOTKEY_MSG_ID)
-                    Snap.Take();
+                    Snap.TakeFull();
             base.WndProc(ref m);
         }
     }

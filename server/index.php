@@ -6,26 +6,19 @@
 ?>
 <p>
     <strong>XCAP</strong> is a screen snapping tool written by <a href="http://pigbacon.net"><em>PigBacon</em></a> in C#.<br />
-    It's going to be open source on GitHub once a few bugs are fixed.<br />
+    The Git for xcap is located <b><a href="http://github.com/PigBacon/xcap">here!</a></b> Hurrah!
     <br />
     <strong>Known issues:</strong>
     <ul>
-        <li>Frozen Snap bugs out graphically.</li>
-        <li>Frozen Snap's selection box is darker due to layering of colors.</li>
-        <li>The numbers in the selection boxes can come out of the box if you select a small area.</li>
+        <li>Nothing, whoo!</li>
     </ul>
     <br />
     <strong>TODO:</strong>
     <ul>
-        <li>Finish cleaning code and Git everything.</li>
-        <li>Fix Frozen Snap's graphic issues.</li>
         <li>Add options for startup launching.</li>
-        <li>Key binds, key binds, key binds! Bind <strong>ALL</strong> the things.</li>
-        <li>Make an "Options" form with a few more options:
         <ul>
-            <li>Startup launching</li>
-            <li>Use own site? (FTP/PHP script? Dunno.)</li>
-            <li>Other stuff which I think of.</li>
+            <li>This will probably require actual installation.</li>
+            <li>For now, put a shortcut to xcap.exe in your Startup folder, and don't move the xcap application.</li>
         </ul>
     </li>
     </ul>

@@ -1,39 +1,54 @@
 <?php
-    define ('URL', 'http://xcap.in');
+
+    ob_start();
+    include ('utility.php');
+    ob_end_clean();
 
     function get_file_name() {
-        $file = substr(random_alphanumeric(25, false), 0, 6) . '.png';
+        $file = random_alphanumeric(6, false) . '.png';
         return $file;
     }
 
-    if (!isset($_FILES['file']) || !isset($_GET['direct'])) {
-        exit ('-'.'Something went wrong.');
+    global $image;
+    $image = "image";
+
+    if (!isset($_FILES[$image]) || !isset($_GET['direct'])) {
+        exit_('-'.'Something went wrong.');
     }
 
-    if (is_uploaded_file($_FILES['file']['tmp_name'])) {
-        if (imagecreatefrompng($_FILES['file']['tmp_name'])) {
-            $file_name = get_file_name();
-            while (file_exists('./i/'.$file_name)) {
-                $file_name = get_file_name();
-            }
-            if (move_uploaded_file($_FILES['file']['tmp_name'], './i/'.$file_name)) {
-                if ($_GET['direct'] == "yes") {
-                    echo '+'.URL.'/i/'.$file_name;
-                } else {
-                    echo '+'.URL.'/'.$file_name;
-                }
-            } else {
-                echo '-'.'Failed moving uploaded file.';
-            }
-        } else {
-            echo '-'.'Invalid file was uploaded.';
+    if (!is_uploaded_file($_FILES[$image]['tmp_name'])) {
+        exit_('-'.'Error uploading image.');
+    }
+
+    if (!imagecreatefrompng($_FILES[$image]['tmp_name'])) {
+        exit_('-'.'Non image was uploaded.');
+    }
+
+    if (!is_dir(UPLOAD_DIR)) {
+        mkdir(UPLOAD_DIR, 0755);
+    }
+
+    $file_name = get_file_name();
+    while (file_exists(UPLOAD_DIR.'/'.$file_name)) {
+        $file_name = get_file_name();
+    }
+
+    if (!move_uploaded_file($_FILES[$image]['tmp_name'], UPLOAD_DIR.'/'.$file_name)) {
+        exit_('-'.'Failed moving uploaded image.');
+    }
+
+    if ($_GET['direct'] == "yes") {
+        $dir = UPLOAD_DIR;
+        if (substr($dir, 0, 2) == './') {
+            $dir = substr($dir, 2);
         }
+        exit_('+'.get_url($dir.$file_name));
     } else {
-        echo '-'.'Error uploading file.';
+        exit_('+'.get_url($file_name));
     }
 
-    function _exit($s) {
-        @unlink($_FILES['file']['tmp_name']);
+    function exit_($s) {
+        @unlink($_FILES[$image]['tmp_name']);
         exit($s);
     }
 

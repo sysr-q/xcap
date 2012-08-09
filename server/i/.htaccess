@@ -1,4 +1,1 @@
 Options -Indexes +FollowSymLinks
-RewriteEngine Off
-RewriteEngine On
-RewriteRule ^(.*\.php)$ http://xcap.in [NC,L]

@@ -18,6 +18,7 @@ namespace xcap
             this.key = (int)key;
             this.hWnd = form.Handle;
             id = this.GetHashCode();
+            System.Diagnostics.Debug.WriteLine("Hooking: " + modifier + " | " + key.ToString());
         }
 
         public bool Register()
@@ -33,6 +34,11 @@ namespace xcap
         public override int GetHashCode()
         {
             return modifier ^ key ^ hWnd.ToInt32();
+        }
+
+        public IntPtr GetHwnd()
+        {
+            return hWnd;
         }
 
         [DllImport("user32.dll")]
