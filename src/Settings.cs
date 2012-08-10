@@ -19,6 +19,17 @@ namespace xcap
         }
 
         /// <summary>
+        /// The current xcap build version.
+        /// </summary>
+        public static String Version
+        {
+            get
+            {
+                return "2.0.2";
+            }
+        }
+
+        /// <summary>
         /// Does the user want to use "Frozen" snap?
         /// This is where a still image is taken of the display when the snap is called, and they choose from that.
         /// </summary>
@@ -138,7 +149,8 @@ namespace xcap
         {
             get
             {
-                return new Uri("http://" + Registry.CurrentUser.CreateSubKey(@"Software\xcap").GetValue("URI", "xcap.example.com").ToString());
+                return new Uri("http://" 
+                    + StripUrl(Registry.CurrentUser.CreateSubKey(@"Software\xcap").GetValue("URI", "xcap.example.com").ToString()));
             }
             set
             {
@@ -171,17 +183,6 @@ namespace xcap
             get
             {
                 return new Uri("im.xcap.in");
-            }
-        }
-
-        /// <summary>
-        /// The current xcap build version.
-        /// </summary>
-        public static String Version
-        {
-            get
-            {
-                return "2.0.1";
             }
         }
 
