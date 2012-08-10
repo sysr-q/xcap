@@ -7,18 +7,11 @@ namespace xcap
     {
         Keys key_snap, key_full;
         Char char_snap, char_full;
-        Timer _timer = new Timer();
-        String[] _timer_chars = { "--", "\\", "|", "/" };
-        int _timer_at = 0;
-        bool _timer_check = false;
 
         public Options()
         {
             InitializeComponent();
             this.Icon = Snap.form1.Icon;
-            _timer.Tick += new EventHandler(_timer_Tick);
-            _timer.Interval = 500;
-            _timer.Start();
             this.Text = "Options (xcap-" + Settings.Version + ")";
 
             TxtKeyBindSnap.KeyPress += new KeyPressEventHandler(TxtKeyBindSnap_KeyPress);
@@ -65,21 +58,6 @@ namespace xcap
             
             TxtServerAddr.Text = Settings.StripUrl(Settings.ServerUrl.ToString());
             TryServer();
-        }
-
-        private void _timer_Tick(object sender, EventArgs e)
-        {
-            if (!_timer_check)
-            {
-                _timer_at = 0;
-                this.ChkValidServer.Text = "Valid";
-                return;
-            }
-            _timer_at++;
-            if (_timer_at > _timer_chars.Length - 1)
-                _timer_at = 0;
-            String s = _timer_chars[_timer_at];
-            this.ChkValidServer.Text = "Valid " + s + "";
         }
 
         private void TxtKeyBindFull_KeyPress(object sender, KeyPressEventArgs e)
@@ -145,7 +123,6 @@ namespace xcap
             String  _snap = (ChkCtrlSnap.Checked ? "+" : "-") + (ChkAltSnap.Checked ? "+" : "-") + (ChkShiftSnap.Checked ? "+" : "-") + char_snap;
             String  _full = (ChkCtrlFull.Checked ? "+" : "-") + (ChkAltFull.Checked ? "+" : "-") + (ChkShiftFull.Checked ? "+" : "-") + char_full;
             String URI = Settings.StripUrl(TxtServerAddr.Text);
-            _timer_check = true;
             TryServer();
             /// Set all the Snap variables.
             Settings.KeySnap = _snap;
@@ -186,16 +163,18 @@ namespace xcap
             if (reply == "+")
             {
                 ChkValidServer.CheckState = CheckState.Checked;
+                ChkValidServer.Text = "Valid";
             }
             else if (reply == "-")
             {
                 ChkValidServer.CheckState = CheckState.Indeterminate;
+                ChkValidServer.Text = "Invalid";
             }
             else
             {
                 ChkValidServer.CheckState = CheckState.Unchecked;
+                ChkValidServer.Text = "Unknown.";
             }
-            _timer_check = false;
         }
     }
 }

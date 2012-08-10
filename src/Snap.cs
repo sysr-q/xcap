@@ -276,7 +276,7 @@ namespace xcap
                 {
                     LogError(ex);
                     MessageBox.Show(string.Format("An error occured!\n"
-                        +"Please send the contents of your error.log to the developer."));
+                    + "Please send the contents of your error.log to the developer."), "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             if (!SelectFrm.IsDisposed)
@@ -312,8 +312,7 @@ namespace xcap
             {
                 LogError(ex);
                 MessageBox.Show(string.Format("An error occured!\n"
-                    + "Please send the contents of your error.log to the developer.\n"
-                    + "Error: {0}\n{1}", ex.Message, ex.StackTrace));
+                    + "Please send the contents of your error.log to the developer."), "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             CleanUp();
         }
@@ -356,6 +355,27 @@ namespace xcap
             font.Dispose();
         }
 
+        #region Clipboard
+        public static void SetClipboardWithRepeat(String s, int max)
+        {
+            max--;
+            if (max <= 0)
+            {
+                MessageBox.Show("Unable to set clipboard string.\n" + s, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            try
+            {
+                Clipboard.SetText(s);
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                SetClipboardWithRepeat(s, max);
+            }
+        }
+        #endregion
+
         public static void Upload(Image img)
         {
             Dictionary<String, String> post = new Dictionary<String, String>();
@@ -375,7 +395,7 @@ namespace xcap
             if (s.Substring(0, 1) == "+")
             {
                 ur = Settings.UploadResult.SUCCESS;
-                Clipboard.SetText(s.Substring(1));
+                SetClipboardWithRepeat(s.Substring(1), 5);
             }
             else if (s.Substring(0, 1) == "-")
             {
