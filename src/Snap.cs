@@ -16,6 +16,7 @@ namespace xcap
         // Add more in depths comments explaining what a lot of stuff does.
         // Add an option to run xcap on start. 
         //  -> Probably means I'll have to pack this in an installer and make sure its run from %ProgramFiles%\.xcap or something.
+        // Update checking, comparing versions, the likes.
 
 
         /// <summary>
@@ -27,7 +28,7 @@ namespace xcap
         /// Because who needs vsync anyway?
         /// </remarks>
         public static DummyForm form { get; private set; }
-        public static DummyForm1 form1 { get; set; }
+        public static DummyForm1 form1 { get; private set; }
 
         /// <summary>
         /// The system-tray icon which is displayed.
@@ -72,10 +73,7 @@ namespace xcap
             form1 = new DummyForm1();
 
             Settings.RefreshKeyBinds();
-
-            form.FormClosing += new FormClosingEventHandler(form_FormClosing);
-            form1.FormClosing += new FormClosingEventHandler(form_FormClosing);
-
+            
             icon = new NotifyIcon();
             icon.Text = "xcap";
             icon.Icon = form.Icon;
@@ -104,6 +102,9 @@ namespace xcap
             form1.Dispose();
             Settings.ghk_Snap.Unregister();
             Settings.ghk_Full.Unregister();
+
+            icon.Visible = false;
+            icon.Dispose();
         }
 
         public static void LogError(Exception ex)
@@ -112,11 +113,6 @@ namespace xcap
             stream.WriteLine(String.Format("---- {0} ----", DateTime.Now.ToLongTimeString()));
             stream.WriteLine(ex);
             stream.Dispose();
-        }
-
-        public static void form_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            icon.Dispose();
         }
 
         private static where GetWhere()
@@ -176,6 +172,8 @@ namespace xcap
             SelectFrm.ShowInTaskbar = false;
             SelectFrm.Opacity = Settings.Frozen ? 1.0 : 0.5;
             SelectFrm.BackColor = Color.White;
+            SelectFrm.TopMost = true;
+
             Bitmap bm = null;
             if (Settings.Frozen)
             {
