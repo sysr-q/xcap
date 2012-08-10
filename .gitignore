@@ -2,3 +2,7 @@
 src/bin
 src/obj
 binaries
+
+# Files
+*.suo
+*.csproj.user
