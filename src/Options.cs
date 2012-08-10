@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows.Forms;
-using System.Text.RegularExpressions;
 
 namespace xcap
 {
@@ -64,7 +63,7 @@ namespace xcap
                 System.Diagnostics.Debug.WriteLine(e);
             }
             
-            TxtServerAddr.Text = StripUrl(Settings.ServerUrl.ToString());
+            TxtServerAddr.Text = Settings.StripUrl(Settings.ServerUrl.ToString());
             TryServer();
         }
 
@@ -145,7 +144,7 @@ namespace xcap
         {
             String  _snap = (ChkCtrlSnap.Checked ? "+" : "-") + (ChkAltSnap.Checked ? "+" : "-") + (ChkShiftSnap.Checked ? "+" : "-") + char_snap;
             String  _full = (ChkCtrlFull.Checked ? "+" : "-") + (ChkAltFull.Checked ? "+" : "-") + (ChkShiftFull.Checked ? "+" : "-") + char_full;
-            String URI = StripUrl(TxtServerAddr.Text);
+            String URI = Settings.StripUrl(TxtServerAddr.Text);
             _timer_check = true;
             TryServer();
             /// Set all the Snap variables.
@@ -164,16 +163,9 @@ namespace xcap
             }
         }
 
-        private String StripUrl(String s)
-        {
-            s = Regex.Replace(s, "^http:\\/\\/", "", RegexOptions.IgnoreCase);
-            s = Regex.Replace(s, "\\/$", "", RegexOptions.IgnoreCase);
-            return s;
-        }
-
         private void TryServer()
         {
-            String server = StripUrl(TxtServerAddr.Text);
+            String server = Settings.StripUrl(TxtServerAddr.Text);
             Uri version = new Uri("http://" + server + "/valid.php?" + Settings.Version.ToString());
             String reply = "--";
             try

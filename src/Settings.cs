@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Win32;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace xcap
 {
@@ -183,7 +181,7 @@ namespace xcap
         {
             get
             {
-                return "2.0.0";
+                return "2.0.1";
             }
         }
 
@@ -201,6 +199,13 @@ namespace xcap
                 }
                 return PATH;
             }
+        }
+
+        public static String StripUrl(String s)
+        {
+            s = Regex.Replace(s, "^http:\\/\\/", "", RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, "\\/$", "", RegexOptions.IgnoreCase);
+            return s;
         }
 
         public static void RefreshKeyBinds()

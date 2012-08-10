@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Drawing;
-using System.Windows.Forms;
-using Microsoft.Win32;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Net;
+using System.Text;
+using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace xcap
 {
@@ -65,7 +64,7 @@ namespace xcap
             if (key_snap.GetValue("FULL") == null)
                 key_snap.SetValue("FULL", "+-+~");
             if (key_snap.GetValue("URI") == null)
-                key_snap.SetValue("URI", Settings.UploadUrl.ToString());
+                key_snap.SetValue("URI", Settings.ServerUrl.ToString());
             if (key_snap.GetValue("OWN_SERV") == null)
                 key_snap.SetValue("OWN_SERV", Settings.UseOwnServer);
 
