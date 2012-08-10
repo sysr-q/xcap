@@ -140,7 +140,7 @@ namespace xcap
         {
             get
             {
-                return new Uri(Registry.CurrentUser.CreateSubKey(@"Software\xcap").GetValue("URI", "xcap.example.com").ToString());
+                return new Uri("http://" + Registry.CurrentUser.CreateSubKey(@"Software\xcap").GetValue("URI", "xcap.example.com").ToString());
             }
             set
             {
