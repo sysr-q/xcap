@@ -73,6 +73,7 @@ namespace xcap
             form1 = new DummyForm1();
 
             Settings.RefreshKeyBinds();
+            GenerateIconList();
             
             icon = new NotifyIcon();
             icon.Text = "xcap";
@@ -335,23 +336,65 @@ namespace xcap
             return (byte[])converter.ConvertTo(img, typeof(byte[]));
         }
 
-        public static void SetPercentIcon(int percent)
-        {
-            Brush brush = new SolidBrush(Color.White);
-            Bitmap bitmap = new Bitmap(16, 16);
-            Graphics graphics = Graphics.FromImage(bitmap);
-            Font font = new Font(FontFamily.GenericMonospace, 8);
-            graphics.FillEllipse(new SolidBrush(Color.Blue), new Rectangle(0, 0, 15, 15));
-            graphics.DrawString((percent != 100 ? percent.ToString() : ":)"), font, brush, 0, 0);
-            IntPtr hIcon = bitmap.GetHicon();
-            Icon newIcon = Icon.FromHandle(hIcon);
-            icon.Icon = newIcon;
+        #region PercentIcon
+        private static Icon[] percent_Icons;
 
-            bitmap.Dispose();
-            newIcon.Dispose();
-            graphics.Dispose();
+        public static void GenerateIconList()
+        {
+            if (percent_Icons != null)
+                return;
+
+            percent_Icons = new Icon[101];
+            Brush brush = new SolidBrush(Color.White);
+            Font font = new Font(FontFamily.GenericMonospace, 8);
+            for (int i = 0; i < 100; ++i)
+            {
+                Bitmap bitmap = new Bitmap(16, 16);
+                Graphics graphics = Graphics.FromImage(bitmap);
+                graphics.FillEllipse(new SolidBrush(Color.Blue), new Rectangle(0, 0, 15, 15));
+                String draw = ((i + 1) == 100 ? ":)" : (i + 1).ToString());
+                graphics.DrawString(draw, font, brush, 0, 0);
+                IntPtr hIcon = bitmap.GetHicon();
+                Icon newIcon = Icon.FromHandle(hIcon);
+                percent_Icons[i] = newIcon;
+                newIcon.Dispose();
+                bitmap.Dispose();
+                graphics.Dispose();
+            }
+
+            brush.Dispose();
             font.Dispose();
+            // Pad with the xcap icon, just for ease of use.
+            percent_Icons[percent_Icons.Length - 1] = form.Icon;
         }
+
+        public static void SetPercentIcon(int percent, bool force = false)
+        {
+            if (force)
+            {
+                Brush brush = new SolidBrush(Color.White);
+                Bitmap bitmap = new Bitmap(16, 16);
+                Graphics graphics = Graphics.FromImage(bitmap);
+                Font font = new Font(FontFamily.GenericMonospace, 8);
+                graphics.FillEllipse(new SolidBrush(Color.Blue), new Rectangle(0, 0, 15, 15));
+                graphics.DrawString((percent != 100 ? percent.ToString() : ":)"), font, brush, 0, 0);
+                IntPtr hIcon = bitmap.GetHicon();
+                Icon newIcon = Icon.FromHandle(hIcon);
+                icon.Icon = newIcon;
+
+                brush.Dispose();
+                bitmap.Dispose();
+                newIcon.Dispose();
+                graphics.Dispose();
+                font.Dispose();
+            }
+            else
+            {
+                if (percent != 0 && percent_Icons != null && percent_Icons.Length > percent - 1)
+                    icon.Icon = percent_Icons[percent - 1];
+            }
+        }
+        #endregion
 
         #region Clipboard
         public static void SetClipboardWithRepeat(String s, int max)
@@ -385,8 +428,8 @@ namespace xcap
             StreamReader reader = new StreamReader(dataStream);
             String s = reader.ReadToEnd();
 
-            reader.Close();
-            dataStream.Close();
+            reader.Dispose();
+            dataStream.Dispose();
             resp.Close();
 
             Settings.UploadResult ur = Settings.UploadResult.MISC;
@@ -471,6 +514,7 @@ namespace xcap
                     int percent = ((total * 100) / image.Length);
                     SetPercentIcon(percent);
                 } while (ms.CanRead && count > 0);
+                ms.Dispose();
 
                 foreach (var param in postParameters)
                 {
@@ -483,7 +527,7 @@ namespace xcap
                 // Add the end of the request
                 byte[] footer = Encoding.UTF8.GetBytes("\r\n--" + boundary + "--\r\n");
                 formDataStream.Write(footer, 0, footer.Length);
-                formDataStream.Close();
+                formDataStream.Dispose();
             }
             #endregion
 
