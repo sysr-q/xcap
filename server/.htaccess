@@ -1,4 +1,4 @@
 RewriteEngine On
 
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([^/]+)\.png$ image.php?img=$1 [NC,L]
+RewriteRule ^([^/]+)\.png$ index.php?act=image&var=$1 [NC,L]

@@ -57,7 +57,7 @@ namespace xcap
             }
             
             TxtServerAddr.Text = Settings.StripUrl(Settings.ServerUrl.ToString());
-            TryServer();
+            TryServer(TxtServerAddr.Text);
         }
 
         private void TxtKeyBindFull_KeyPress(object sender, KeyPressEventArgs e)
@@ -123,7 +123,7 @@ namespace xcap
             String  _snap = (ChkCtrlSnap.Checked ? "+" : "-") + (ChkAltSnap.Checked ? "+" : "-") + (ChkShiftSnap.Checked ? "+" : "-") + char_snap;
             String  _full = (ChkCtrlFull.Checked ? "+" : "-") + (ChkAltFull.Checked ? "+" : "-") + (ChkShiftFull.Checked ? "+" : "-") + char_full;
             String URI = Settings.StripUrl(TxtServerAddr.Text);
-            TryServer();
+            TryServer(TxtServerAddr.Text);
             /// Set all the Snap variables.
             Settings.KeySnap = _snap;
             Settings.KeyFull = _full;
@@ -140,14 +140,37 @@ namespace xcap
             }
         }
 
-        private void TryServer()
+        public static Boolean ValidServer(String ServerUrl)
         {
-            String server = Settings.StripUrl(TxtServerAddr.Text);
-            Uri version = new Uri("http://" + server + "/valid.php?" + Settings.Version.ToString());
+            String server = Settings.StripUrl(ServerUrl);
+            Uri version = new Uri("http://" + server + "/?act=valid&var=" + Settings.Version.ToString());
             String reply = "--";
             try
             {
-                reply = new System.Net.WebClient().DownloadString(version);
+                reply = new System.Net.WebClient().DownloadString(version).Trim();
+            }
+            catch (System.Net.WebException we)
+            {
+                Snap.LogError(we);
+                Snap.icon.ShowBalloonTip(150, "Failure! :(", "There was a problem connecting to your selected server.", ToolTipIcon.Error);
+            }
+            catch (Exception e)
+            {
+                Snap.LogError(e);
+                Snap.icon.ShowBalloonTip(150, "Failure! :(", "There was a general problem connecting to your selected server.", ToolTipIcon.Error);
+            }
+
+            return reply == "+";
+        }
+
+        private void TryServer(String ServerUrl)
+        {
+            String server = Settings.StripUrl(ServerUrl);
+            Uri version = new Uri("http://" + server + "/?act=valid&var=" + Settings.Version.ToString());
+            String reply = "--";
+            try
+            {
+                reply = new System.Net.WebClient().DownloadString(version).Trim();
             }
             catch (System.Net.WebException we)
             {
@@ -173,7 +196,7 @@ namespace xcap
             else
             {
                 ChkValidServer.CheckState = CheckState.Unchecked;
-                ChkValidServer.Text = "Unknown.";
+                ChkValidServer.Text = "Unknown";
             }
         }
     }

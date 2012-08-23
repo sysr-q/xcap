@@ -483,7 +483,7 @@ namespace xcap
             // Set up the request properties
             request.Method = "POST";
             request.ContentType = "multipart/form-data; boundary=" + boundary;
-            request.UserAgent = "XCAP Upload Agent";
+            request.UserAgent = "XCAP Upload Agent (Ver: " + Settings.Version + ")";
 
             #region WRITING STREAM
             using (Stream formDataStream = request.GetRequestStream())

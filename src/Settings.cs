@@ -25,7 +25,7 @@ namespace xcap
         {
             get
             {
-                return "2.1.1";
+                return "2.2.0";
             }
         }
 
@@ -138,7 +138,7 @@ namespace xcap
         {
             get
             {
-                return new Uri((UseOwnServer ? ServerUrl.ToString() : XcapUploadUrl.ToString()) + "/upload.php?direct=" + (Direct ? "yes" : "no"));
+                return new Uri((UseOwnServer ? ServerUrl.ToString() : XcapUploadUrl.ToString()) + "/?act=upload&var=" + (Direct ? "yes" : "no"));
             }
         }
 
